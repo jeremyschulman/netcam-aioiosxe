@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "netcam-aioiosxe"
+version = "0.1.0"
+description = "NetCAD - Cisco IOS-XE driver (asyncio)"
+readme = "README.md"
+authors = ["Jeremy Schulman"]
+
+[tool.poetry.dependencies]
+   python = ">=3.10"
+   asyncssh = "*"
+   pydantic-env = "*"
+scrapli = "^2023.1.30"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.interrogate]
+    fail-under = 0
+    verbose = 1
+    color = true
+    ignore-module = true
+    exclude = ["tasks.py", "examples", "build", "venv"]
