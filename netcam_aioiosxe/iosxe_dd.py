@@ -25,7 +25,7 @@ class IOSXEDriver:
 
     async def is_available(self) -> bool:
         try:
-            await asyncio.open_connection(host=self.device.name, port=self.scrapli.port)
+            await asyncio.open_connection(host=self.device.name, port=self.cli.port)
         except Exception:  # noqa
             return False
         return True

@@ -21,7 +21,7 @@ import importlib.metadata as importlib_metadata
 from netcad.device import Device
 
 from .iosxe_dut import IOSXEDeviceUnderTest
-from .iosxe_dcfg import IOSXEDeviceConfigurable
+from .config.iosxe_dcfg import IOSXEDeviceConfigurable
 from .iosxe_plugin_init import iosxe_plugin_config
 
 # -----------------------------------------------------------------------------

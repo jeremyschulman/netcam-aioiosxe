@@ -20,8 +20,8 @@ from .iosxe_plugin_globals import g_iosxe
 
 def iosxe_plugin_config(config: dict):
     """
-    Called during plugin init, this function is used to setup the default
-    credentials to access the EOS devices.
+    Called during plugin init, this function is used to set up the default
+    credentials to access the IOS-XE devices.
 
     Parameters
     ----------
