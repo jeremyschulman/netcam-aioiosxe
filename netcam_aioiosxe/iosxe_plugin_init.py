@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 from pydantic import ValidationError
+from httpx import BasicAuth
 
 from .iosxe_plugin_config import IOSXEPluginConfig
 from .iosxe_plugin_globals import g_iosxe
@@ -39,6 +40,10 @@ def iosxe_plugin_config(config: dict):
     g_iosxe.auth_read = (
         auth_read.username.get_secret_value(),
         auth_read.password.get_secret_value(),
+    )
+
+    g_iosxe.basic_auth_read = BasicAuth(
+        username=g_iosxe.auth_read[0], password=g_iosxe.auth_read[1]
     )
 
     # If the User provides the admin credential environment variobles, then set

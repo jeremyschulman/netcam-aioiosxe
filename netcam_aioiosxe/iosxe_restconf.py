@@ -1,4 +1,4 @@
-#  Copyright 2021 Jeremy Schulman
+#  Copyright 2023 Jeremy Schulman
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -13,52 +13,45 @@
 #  limitations under the License.
 
 # -----------------------------------------------------------------------------
-# System Imports
-# -----------------------------------------------------------------------------
-
-from typing import Optional, Tuple
-from dataclasses import dataclass
-
-# -----------------------------------------------------------------------------
 # Public Imports
 # -----------------------------------------------------------------------------
 
-from httpx import BasicAuth
+import httpx
 
 # -----------------------------------------------------------------------------
 # Private Imports
 # -----------------------------------------------------------------------------
 
-from .iosxe_plugin_config import IOSXEPluginConfig
+from netcam_aioiosxe.iosxe_plugin_globals import g_iosxe
 
 # -----------------------------------------------------------------------------
 # Exports
 # -----------------------------------------------------------------------------
 
-__all__ = ["g_iosxe"]
-
-
-@dataclass
-class IOSXEGlobals:
-    """
-    Define a class to encapsulate the global variables used by this plugin.
-
-    Attributes
-    ----------
-    config: dict
-        This is the plugin configuration dictionary as declared in the User
-        `netcad.toml` configuration file.
-    """
-
-    config: Optional[IOSXEPluginConfig] = None
-    auth_read: Optional[Tuple[str, str]] = None
-    auth_admin: Optional[Tuple[str, str]] = None
-    basic_auth_read: Optional[BasicAuth] = None
+__all__ = ["IOSXERestConf"]
 
 
 # -----------------------------------------------------------------------------
-# Globals
+#
+#                                 CODE BEGINS
+#
 # -----------------------------------------------------------------------------
 
-# the global variables used by this plugin
-g_iosxe = IOSXEGlobals()
+
+class IOSXERestConf(httpx.AsyncClient):
+    """
+    IOS-XE RESTCONF asyncio client that uses JSON by default
+    """
+
+    def __init__(self, host: str):
+        base_url = httpx.URL(f"https://{host}/restconf")
+
+        super().__init__(
+            base_url=base_url,
+            auth=g_iosxe.basic_auth_read,
+            verify=False,
+            timeout=g_iosxe.config.timeout,
+        )
+
+        self.headers["accept"] = "application/yang-data+json"
+        self.headers["content-type"] = "application/yang-data+json"
