@@ -30,7 +30,7 @@ from .iosxe_plugin_init import iosxe_plugin_config
 
 
 plugin_version = importlib_metadata.version(__name__)
-plugin_description = "Cisco IOS-XE systems (asyncio)"
+plugin_description = "Cisco IOS-XE SSH, RESTCONF"
 
 
 def plugin_get_dut(device: Device) -> IOSXEDeviceUnderTest:
