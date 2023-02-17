@@ -32,7 +32,7 @@ from netcad.netcam.dut import AsyncDeviceUnderTest
 # -----------------------------------------------------------------------------
 
 from .iosxe_plugin_globals import g_iosxe
-from .iosxe_dd import IOSXEDriver
+from .iosxe_ssh import IOSXEDriver
 
 # -----------------------------------------------------------------------------
 # Exports

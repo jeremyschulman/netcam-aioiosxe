@@ -30,7 +30,7 @@ from netcad.netcam.dev_config import AsyncDeviceConfigurable
 # Privae Imports
 # -----------------------------------------------------------------------------
 
-from netcam_aioiosxe.iosxe_dd import IOSXEDriver
+from netcam_aioiosxe.iosxe_ssh import IOSXEDriver
 from netcam_aioiosxe.iosxe_plugin_globals import g_iosxe
 
 # -----------------------------------------------------------------------------
