@@ -25,14 +25,14 @@ from functools import singledispatchmethod
 
 from netcad.device import Device
 from netcad.checks import CheckCollection, CheckResultsCollection
-from netcad.netcam.dut import AsyncDeviceUnderTest
+from netcam.dut import AsyncDeviceUnderTest
 
 # -----------------------------------------------------------------------------
 # Privae Imports
 # -----------------------------------------------------------------------------
 
 from .iosxe_plugin_globals import g_iosxe
-from .iosxe_dd import IOSXEDriver
+from .iosxe_ssh import IOSXEDriver
 
 # -----------------------------------------------------------------------------
 # Exports
