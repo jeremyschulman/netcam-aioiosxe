@@ -10,7 +10,7 @@ authors = ["Jeremy Schulman"]
    asyncssh = "*"
    pydantic-env = "*"
    scrapli = "^2023.1.30"
-   netcadcam = ">0.4.0"
+   netcad = ">=0.5.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
