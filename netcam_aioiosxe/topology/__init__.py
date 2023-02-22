@@ -14,5 +14,6 @@
 
 from . import iosxe_check_device_info
 from . import iosxe_check_cabling
+from . import iosxe_check_interfaces
 from . import iosxe_check_ipaddrs
 from . import iosxe_check_transceivers
