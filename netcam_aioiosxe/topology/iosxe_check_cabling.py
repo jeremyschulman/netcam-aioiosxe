@@ -1,4 +1,4 @@
-#  Copyright 2021 Jeremy Schulman
+#  Copyright 2023 Jeremy Schulman
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -55,10 +55,8 @@ async def iosxe_check_cabling(
     self, testcases: InterfaceCablingCheckCollection
 ) -> CheckResultsCollection:
     """
-    Support the "cabling" tests for Arista EOS devices.  These tests are
+    Support the "cabling" tests for Cisco IOS-XE devices.  These tests are
     implementeding by examing the LLDP neighborship status.
-
-    This function is imported directly into the EOS DUT class defintion.
 
     Parameters
     ----------
@@ -67,10 +65,6 @@ async def iosxe_check_cabling(
 
     testcases:
         The device specific cabling testcases as build via netcad.
-
-    Yields
-    ------
-    Netcad test-case items.
     """
     dut: IOSXEDeviceUnderTest = self
     device = dut.device
