@@ -30,7 +30,7 @@ from netcam.dcfg import AsyncDeviceConfigurable
 # Privae Imports
 # -----------------------------------------------------------------------------
 
-from netcam_aioiosxe.iosxe_ssh import IOSXEDriver
+from netcam_aioiosxe.iosxe_ssh import IOSXESSHDriver
 from netcam_aioiosxe.iosxe_plugin_globals import g_iosxe
 
 # -----------------------------------------------------------------------------
@@ -53,7 +53,7 @@ class IOSXEDeviceConfigurable(AsyncDeviceConfigurable):
         """
         super().__init__(device=device)
         username, password = g_iosxe.auth_admin
-        self.ssh = IOSXEDriver(device=device, username=username, password=password)
+        self.ssh = IOSXESSHDriver(device=device, username=username, password=password)
         self.capabilities = self.DEFAULT_CAPABILITIES
         self._scp_creds = (username, password)
 
