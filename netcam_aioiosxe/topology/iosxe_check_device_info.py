@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import re
 
 # -----------------------------------------------------------------------------
 # Public Impors
@@ -63,6 +64,10 @@ async def iosxe_check_device_info(
     dev_sys_data = dev_hw["device-system-data"]
     dev_sw_ver = dev_sys_data["software-version"]
 
+    dev_plat_inv["system-info"] = dev_sw_ver
+    dev_plat_inv["software-version"] = re.search(r", Version (.+),", dev_sw_ver).group(
+        1
+    )
     results = list()
 
     # check the product model for a match.  The actual product model may be a
@@ -71,14 +76,11 @@ async def iosxe_check_device_info(
 
     check = device_checks.checks[0]
     result = DeviceInformationCheckResult(device=dut.device, check=check)
-    ver_info = dict()
 
     exp_values = check.expected_results
 
     exp_product_model = exp_values.product_model
     has_product_model = dev_plat_inv["part-number"]
-    ver_info["serial-number"] = dev_plat_inv["serial-number"]
-    ver_info["software-version"] = dev_sw_ver
 
     check_len = min(len(has_product_model), len(exp_product_model))
     model_match = has_product_model[:check_len] == exp_product_model[:check_len]
@@ -91,7 +93,10 @@ async def iosxe_check_device_info(
     # include an information block that provides the raw "show version" object content.
 
     info = CheckResult(
-        device=dut.device, check=check, status=CheckStatus.INFO, measurement=ver_info
+        device=dut.device,
+        check=check,
+        status=CheckStatus.INFO,
+        measurement=dev_plat_inv,
     )
 
     results.append(info)

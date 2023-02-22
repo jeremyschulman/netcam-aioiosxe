@@ -13,3 +13,4 @@
 #  limitations under the License.
 
 from . import iosxe_check_device_info
+from . import iosxe_check_cabling
