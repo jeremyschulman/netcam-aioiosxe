@@ -31,8 +31,6 @@ from netcam.dut import AsyncDeviceUnderTest
 # Privae Imports
 # -----------------------------------------------------------------------------
 
-from .iosxe_plugin_globals import g_iosxe
-from .iosxe_ssh import IOSXEDriver
 from .iosxe_restconf import IOSXERestConf
 
 # -----------------------------------------------------------------------------
@@ -52,9 +50,6 @@ __all__ = ["IOSXEDeviceUnderTest"]
 class IOSXEDeviceUnderTest(AsyncDeviceUnderTest):
     def __init__(self, *, device: Device, **_kwargs):
         super().__init__(device=device)
-        self.version_info: Optional[dict] = None
-        username, password = g_iosxe.auth_read
-        self.scrapli = IOSXEDriver(device, username, password)
         self.restconf = IOSXERestConf(device)
 
     # -------------------------------------------------------------------------
@@ -73,7 +68,6 @@ class IOSXEDeviceUnderTest(AsyncDeviceUnderTest):
 
     async def teardown(self):
         """DUT tearndown process"""
-        await self.scrapli.cli.close()
         await self.restconf.aclose()
 
     @singledispatchmethod
