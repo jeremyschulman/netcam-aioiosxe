@@ -130,22 +130,20 @@ async def iosxe_test_one_interface(
     result = IPInterfaceCheckResult(device=device, check=check)
     msrd = result.measurement
 
-    # -------------------------------------------------------------------------
-    # if there is any error accessing extracting interface IP address
-    # information, then yeild a failure and return.
-    # -------------------------------------------------------------------------
+    # IOS-XE designates an unassigned IP address as 0.0.0.0.  Therefore, if
+    # this is the value found, then report a missing IP address.
 
-    try:
-        msrd_if_addr: str = msrd_data["ipv4"]
-        msrd_if_subnet: str = msrd_data["ipv4-subnet-mask"]
-        msrd.if_ipaddr = str(
-            ipaddress.ip_interface((msrd_if_addr, msrd_if_subnet))
-        )  # noqa
-
-    except KeyError:
+    if (ipv4_addr := msrd_data["ipv4"]) == "0.0.0.0":
         result.measurement = None
         results.append(result.measure())
         return results
+
+    # convert the API provided value "<ipaddr> <subnetmask>" into expected
+    # format of <ipaddr/prefixlen>
+
+    msrd.if_ipaddr = str(
+        ipaddress.IPv4Interface((ipv4_addr, msrd_data["ipv4-subnet-mask"]))
+    )
 
     # -------------------------------------------------------------------------
     # Ensure the IP interface value matches.
@@ -245,6 +243,17 @@ async def _check_vlan_assoc_interface(
     """
 
     vlan_id = if_name.split("Vlan")[-1]
+
+    # -------------------------------------------------------------------------
+    # Need to extract the list of interfaces from the VLAN.  Unfortunately this
+    # is not available in the RESTCONF (reasons unknown, TAC case opened).
+    #
+    # Need to get the interfaces from the "show vlan" command, but that output
+    # uses "short" interface names.  So then we need to convert to full
+    # interface names by running through the "show interfaces" command.
+    # ... *sigh*.
+    # -------------------------------------------------------------------------
+
     cli_res = await dut.ssh.cli.send_command(f"show vlan id {vlan_id}")
     cli_text = cli_res.result
     cli_lines = cli_text.splitlines()
