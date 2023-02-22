@@ -33,6 +33,7 @@ from netcam.dut import AsyncDeviceUnderTest
 
 from .iosxe_plugin_globals import g_iosxe
 from .iosxe_ssh import IOSXEDriver
+from .iosxe_restconf import IOSXERestConf
 
 # -----------------------------------------------------------------------------
 # Exports
@@ -54,6 +55,7 @@ class IOSXEDeviceUnderTest(AsyncDeviceUnderTest):
         self.version_info: Optional[dict] = None
         username, password = g_iosxe.auth_read
         self.scrapli = IOSXEDriver(device, username, password)
+        self.restconf = IOSXERestConf(device)
 
     # -------------------------------------------------------------------------
     #
@@ -64,16 +66,15 @@ class IOSXEDeviceUnderTest(AsyncDeviceUnderTest):
     async def setup(self):
         """DUT setup process"""
         await super().setup()
-
-        if not await self.scrapli.is_available():
-            raise RuntimeError(f"{self.device.name}: SSH unavaialble, please check.")
-
-        await self.scrapli.cli.open()
-        await self.scrapli.cli.get_prompt()
+        if not await self.restconf.check_connection():
+            raise RuntimeError(
+                f"{self.device.name}: RESTCONF unavaialble, please check."
+            )
 
     async def teardown(self):
         """DUT tearndown process"""
         await self.scrapli.cli.close()
+        await self.restconf.aclose()
 
     @singledispatchmethod
     async def execute_checks(
