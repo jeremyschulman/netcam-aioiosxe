@@ -1,4 +1,4 @@
-#  Copyright 2021 Jeremy Schulman
+#  Copyright 2023 Jeremy Schulman
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -13,12 +13,17 @@
 #  limitations under the License.
 
 # -----------------------------------------------------------------------------
+# System Imports
+# -----------------------------------------------------------------------------
+
+from urllib import parse
+from http import HTTPStatus
+
+# -----------------------------------------------------------------------------
 # Public Imports
 # -----------------------------------------------------------------------------
 
 from netcad.checks import CheckResultsCollection
-
-from netcad.helpers import range_string
 
 from netcad.vlans.checks.check_switchports import (
     SwitchportCheckCollection,
@@ -26,18 +31,13 @@ from netcad.vlans.checks.check_switchports import (
     SwitchportCheckResult,
 )
 
-from netcam_aioeos.eos_dut import EOSDeviceUnderTest
-
-# -----------------------------------------------------------------------------
-# Private Imports
-# -----------------------------------------------------------------------------
+from netcam_aioiosxe import IOSXEDeviceUnderTest
 
 # -----------------------------------------------------------------------------
 # Exports
 # -----------------------------------------------------------------------------
 
-__all__ = ["eos_check_switchports"]
-
+__all__ = []
 
 # -----------------------------------------------------------------------------
 #
@@ -46,8 +46,8 @@ __all__ = ["eos_check_switchports"]
 # -----------------------------------------------------------------------------
 
 
-@EOSDeviceUnderTest.execute_checks.register
-async def eos_check_switchports(
+@IOSXEDeviceUnderTest.register
+async def iosxe_check_switchports(
     dut, switchport_checks: SwitchportCheckCollection
 ) -> CheckResultsCollection:
     """
@@ -69,12 +69,9 @@ async def eos_check_switchports(
     during check execution and showing results.
     """
 
-    dut: EOSDeviceUnderTest
+    dut: IOSXEDeviceUnderTest
     device = dut.device
     results = list()
-
-    cli_data = await dut.get_switchports()
-    map_msrd_swichports = cli_data["switchports"]
 
     # each check represents one interface to validate.  Loop through each of the
     # checks to ensure that the expected switchport use is as expected.
@@ -86,22 +83,30 @@ async def eos_check_switchports(
 
         if_name = check.check_id()
 
-        # if the interface from the design does not exist on the device, then
-        # report this error and go to next check.
+        # get the interface switchport configuration
 
-        if not (msrd_port := map_msrd_swichports.get(if_name)):
+        res = await dut.restconf.get(
+            "data/openconfig-interfaces:interfaces"
+            f"/interface={parse.quote_plus(if_name)}"
+            "/openconfig-if-ethernet:ethernet/openconfig-vlan:switched-vlan/config"
+        )
+
+        # if this configuration does not exist, then return a not-exists
+        # indication.
+
+        if res.status_code != HTTPStatus.OK:
             result.measurement = None
             results.append(result.measure())
             continue
 
-        msrd_swpinfo = msrd_port["switchportInfo"]
+        iface_switchport = res.json()["openconfig-vlan:config"]
 
         # verify the expected switchport mode (access / trunk)
         (
             _check_access_switchport
             if expd_status.switchport_mode == "access"
             else _check_trunk_switchport
-        )(result=result, msrd_status=msrd_swpinfo, results=results)
+        )(result=result, msrd_status=iface_switchport, results=results)
 
     # return the collection of results for all switchport interfaces
     return results
@@ -138,25 +143,12 @@ def _check_trunk_switchport(
     expd: SwitchportCheck.ExpectTrunk = result.check.expected_results
     msrd = result.measurement = SwitchportCheckResult.MeasuredTrunk()
 
-    msrd.switchport_mode = msrd_status["mode"]
-    msrd.native_vlan = msrd_status["trunkingNativeVlanId"]
-
-    # conver the expected list of vlan-ids to a range string for string
-    # comparison purposes. EOS stores this as a CSV string, with ranges, for
-    # example: 14,16,25-26,29.  EOS stores the value "ALL" when there are no
-    # explicitly allowed values configured on the interface.
-
-    # mutate the expected values that are in the form of VlanProfile into their
-    # measureable counterparts.
-
-    if expd.trunk_allowed_vlans:
-        expd_allowed_vids = sorted([vlan.vlan_id for vlan in expd.trunk_allowed_vlans])
-        expd.trunk_allowed_vlans = range_string(expd_allowed_vids)
-    else:
-        expd.trunk_allowed_vlans = "ALL"
+    msrd.switchport_mode = msrd_status["interface-mode"].casefold()
+    msrd.native_vlan = msrd_status["native-vlan"]
+    expd.trunk_allowed_vlans = [v.vlan_id for v in expd.trunk_allowed_vlans]
 
     if expd.native_vlan:
         expd.native_vlan = expd.native_vlan.vlan_id
 
-    msrd.trunk_allowed_vlans = msrd_status["trunkAllowedVlans"]
+    msrd.trunk_allowed_vlans = msrd_status["trunk-vlans"]
     results.append(result.measure())

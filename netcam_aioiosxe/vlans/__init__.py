@@ -13,5 +13,4 @@
 #  limitations under the License.
 
 from . import iosxe_check_vlans
-
-# from . import iosxe_check_switchports
+from . import iosxe_check_switchports
