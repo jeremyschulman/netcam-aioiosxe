@@ -19,6 +19,7 @@
 import asyncio
 from typing import Optional, Any
 from functools import singledispatchmethod
+from collections import defaultdict
 
 # -----------------------------------------------------------------------------
 # Public Imports
@@ -151,3 +152,39 @@ class IOSXEDeviceUnderTest(AsyncDeviceUnderTest):
             iface["name"]: iface
             for iface in body["Cisco-IOS-XE-interfaces-oper:interfaces"]["interface"]
         }
+
+    async def get_vlans(self) -> dict[int, dict]:
+        # using the STP operational data to get the mapping between VLANs and the
+        # interfaces using the VLANs.
+
+        data = await self.api_cache_get(
+            "get-stp", "data/Cisco-IOS-XE-spanning-tree-oper:stp-details/stp-detail"
+        )
+        body = data["Cisco-IOS-XE-spanning-tree-oper:stp-detail"]
+
+        op_vlan_stp_interfaces = defaultdict(list)
+
+        for stp_inst in body:
+            vlan_id = int(stp_inst["instance"][4:])
+            interfaces = [
+                iface["name"] for iface in stp_inst["interfaces"]["interface"]
+            ]
+            op_vlan_stp_interfaces[vlan_id] = interfaces
+
+        got_vlan_table: dict[int, dict] = dict()
+
+        data = await self.api_cache_get(
+            "get-vlans", "data/Cisco-IOS-XE-vlan-oper:vlans/vlan"
+        )
+
+        # create a table by VLAN-ID (int) mapping to the per VLAN data object.
+        for vlan_data in data["Cisco-IOS-XE-vlan-oper:vlan"]:
+            vlan_id = vlan_data["id"]
+            vlan_if_names = {
+                if_rec["interface"] for if_rec in vlan_data.pop("vlan-interfaces", [])
+            }
+            vlan_if_names.update(op_vlan_stp_interfaces[vlan_id])
+            vlan_data["interfaces"] = vlan_if_names
+            got_vlan_table[vlan_id] = vlan_data
+
+        return got_vlan_table

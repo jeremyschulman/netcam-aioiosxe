@@ -254,18 +254,13 @@ async def _check_vlan_assoc_interface(
     # ... *sigh*.
     # -------------------------------------------------------------------------
 
-    cli_res = await dut.ssh.cli.send_command(f"show vlan id {vlan_id}")
-    cli_text = cli_res.result
-    cli_lines = cli_text.splitlines()
-    cli_vlan_line = cli_lines[2]
-    if_short_name_list = cli_vlan_line.split(maxsplit=3)[-1].split(", ")
+    res = await dut.restconf.get(
+        "data/Cisco-IOS-XE-spanning-tree-oper:stp-details"
+        f"/stp-detail=VLAN{vlan_id:04}/interfaces/interface"
+    )
 
-    vlan_cfgd_ifnames = set()
-    for if_short_name in if_short_name_list:
-        res = await dut.ssh.cli.send_command(f"show interfaces {if_short_name}")
-        cli_text = res.result
-        if_long_name = cli_text[: cli_text.find(" ")]
-        vlan_cfgd_ifnames.add(if_long_name)
+    body = res.json()["Cisco-IOS-XE-spanning-tree-oper:interface"]
+    vlan_cfgd_ifnames = [vlan_if["name"] for vlan_if in body]
 
     disrd_ifnames = set()
     dut_ifs = dut.device_info["interfaces"]
