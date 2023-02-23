@@ -12,7 +12,7 @@ from scrapli.driver.core.cisco_iosxe import AsyncIOSXEDriver
 from netcad.device import Device
 
 
-class IOSXEDriver:
+class IOSXESSHDriver:
     def __init__(self, device: Device, username, password):
         self.device = device
         self.cli = AsyncIOSXEDriver(

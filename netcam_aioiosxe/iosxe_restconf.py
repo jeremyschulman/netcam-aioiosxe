@@ -13,10 +13,18 @@
 #  limitations under the License.
 
 # -----------------------------------------------------------------------------
+# System Imports
+# -----------------------------------------------------------------------------
+
+import asyncio
+from socket import getservbyname
+
+# -----------------------------------------------------------------------------
 # Public Imports
 # -----------------------------------------------------------------------------
 
 import httpx
+from netcad.device import Device
 
 # -----------------------------------------------------------------------------
 # Private Imports
@@ -43,8 +51,10 @@ class IOSXERestConf(httpx.AsyncClient):
     IOS-XE RESTCONF asyncio client that uses JSON by default
     """
 
-    def __init__(self, host: str):
-        base_url = httpx.URL(f"https://{host}/restconf")
+    def __init__(self, device: Device):
+        self.device = device
+        base_url = httpx.URL(f"https://{device.name}/restconf")
+        self.port = getservbyname(base_url.scheme)
 
         super().__init__(
             base_url=base_url,
@@ -55,3 +65,20 @@ class IOSXERestConf(httpx.AsyncClient):
 
         self.headers["accept"] = "application/yang-data+json"
         self.headers["content-type"] = "application/yang-data+json"
+
+    async def check_connection(self) -> bool:
+        """
+        This function checks the target device to ensure that the eAPI port is
+        open and accepting connections.  It is recommended that a Caller checks
+        the connection before involing cli commands, but this step is not
+        required.
+
+        Returns
+        -------
+        True when the device eAPI is accessible, False otherwise.
+        """
+        try:
+            await asyncio.open_connection(self.base_url.host, port=self.port)
+        except OSError:
+            return False
+        return True
