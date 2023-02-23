@@ -121,14 +121,14 @@ def _check_access_switchport(
     """
 
     msrd = result.measurement = SwitchportCheckResult.MeasuredAccess()
-    msrd.switchport_mode = msrd_status["mode"]
+    msrd.switchport_mode = msrd_status["interface-mode"].casefold()
 
     # the check stores the VlanProfile, and we need to mutate this value to the
     # VLAN ID for comparitor reason.
     result.check.expected_results.vlan = result.check.expected_results.vlan.vlan_id
 
     # EOS stores the vlan id as int, so type comparison AOK
-    msrd.vlan = msrd_status["accessVlanId"]
+    msrd.vlan = msrd_status["access-vlan"]
     results.append(result.measure())
 
 
