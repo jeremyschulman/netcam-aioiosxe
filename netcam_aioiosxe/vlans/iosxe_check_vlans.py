@@ -1,4 +1,4 @@
-#  Copyright 2021 Jeremy Schulman
+#  Copyright 2023 Jeremy Schulman
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ from netcad.vlans import VlanDesignServiceConfig
 # -----------------------------------------------------------------------------
 
 from netcam_aioiosxe import IOSXEDeviceUnderTest
-
+from .iosxe_get_vlans import iosxe_get_vlans
 
 # -----------------------------------------------------------------------------
 # Exports
@@ -65,7 +65,7 @@ async def iosxe_check_vlans(
     device = dut.device
     results = list()
 
-    op_vlan_table = await dut.get_vlans()
+    op_vlan_table = await iosxe_get_vlans(dut)
 
     ds_config = VlanDesignServiceConfig.parse_obj(vlan_checks.config)
     if not ds_config.check_vlan1:
