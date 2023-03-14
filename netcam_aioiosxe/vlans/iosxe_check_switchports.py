@@ -144,7 +144,7 @@ def _check_trunk_switchport(
     msrd = result.measurement = SwitchportCheckResult.MeasuredTrunk()
 
     msrd.switchport_mode = msrd_status["interface-mode"].casefold()
-    msrd.native_vlan = msrd_status["native-vlan"]
+    msrd.native_vlan = msrd_status.get("native-vlan")
     expd.trunk_allowed_vlans = [v.vlan_id for v in expd.trunk_allowed_vlans]
 
     if expd.native_vlan:

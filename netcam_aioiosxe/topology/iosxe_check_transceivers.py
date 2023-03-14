@@ -18,6 +18,7 @@
 # -----------------------------------------------------------------------------
 
 from typing import Set
+from http import HTTPStatus
 
 # -----------------------------------------------------------------------------
 # Public Imports
@@ -73,7 +74,11 @@ async def iosxe_check_transceivers(
     resp = await dut.restconf.get(
         "data/Cisco-IOS-XE-transceiver-oper:transceiver-oper-data/transceiver"
     )
-    body = resp.json()["Cisco-IOS-XE-transceiver-oper:transceiver"]
+
+    if resp.status_code == HTTPStatus.NO_CONTENT:
+        body = []
+    else:
+        body = resp.json()["Cisco-IOS-XE-transceiver-oper:transceiver"]
 
     if_xcvr_table = {if_data["name"]: if_data for if_data in body}
 
