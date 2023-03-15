@@ -193,7 +193,7 @@ def iosxe_check_one_interface(
     if is_reserved:
         result.status = CheckStatus.INFO
         result.logs.INFO("reserved", measurement.dict())
-        results.append(result.measure())
+        results.append(result)
         return results
 
     # -------------------------------------------------------------------------
