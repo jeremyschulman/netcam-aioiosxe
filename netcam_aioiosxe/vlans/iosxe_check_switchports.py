@@ -114,8 +114,15 @@ async def iosxe_check_switchports(
                 msrd_status["native-vlan"] = None
         else:
             if_swp_access = if_swp_data["Cisco-IOS-XE-switch:access"]
-            msrd_status["interface-mode"] = "access"
+            result.measurement.switchport_mode = "access"
             msrd_status["access-vlan"] = if_swp_access["vlan"]["vlan"]
+
+        # if the expected and actual switchport-mode does not match, then fail
+        # the failure now before comparing switchport fields.
+
+        if result.measurement.switchport_mode != expd_status.switchport_mode:
+            results.append(result.measure())
+            continue
 
         if expd_status.switchport_mode == "access":
             _check_access_switchport(
@@ -139,7 +146,6 @@ def _check_access_switchport(
     """
 
     msrd = result.measurement = SwitchportCheckResult.MeasuredAccess()
-    msrd.switchport_mode = msrd_status["interface-mode"].casefold()
 
     # the check stores the VlanProfile, and we need to mutate this value to the
     # VLAN ID for comparitor reason.
@@ -147,6 +153,7 @@ def _check_access_switchport(
 
     # EOS stores the vlan id as int, so type comparison AOK
     msrd.vlan = msrd_status["access-vlan"]
+
     results.append(result.measure())
 
 
@@ -164,7 +171,6 @@ def _check_trunk_switchport(
 
     msrd = result.measurement = SwitchportCheckResult.MeasuredTrunk()
 
-    msrd.switchport_mode = msrd_status["interface-mode"].casefold()
     msrd.native_vlan = msrd_status.get("native-vlan")
     expd.trunk_allowed_vlans = set(v.vlan_id for v in expd.trunk_allowed_vlans)
 
@@ -172,4 +178,16 @@ def _check_trunk_switchport(
         expd.native_vlan = expd.native_vlan.vlan_id
 
     msrd.trunk_allowed_vlans = msrd_status["trunk-vlans"]
-    results.append(result.measure())
+
+    def on_mismatch(_field, _expd_v, _msrd_v):
+        if _field != "trunk_allowed_vlans":
+            return
+
+        _info = dict()
+        if _missing := _expd_v - _msrd_v:
+            _info["missing"] = _missing
+        if _extra := _msrd_v - _expd_v:
+            _info["extra"] = _extra
+        result.logs.INFO("trunk_allowed_vlans_mismatch", _info)
+
+    results.append(result.measure(on_mismatch=on_mismatch))
