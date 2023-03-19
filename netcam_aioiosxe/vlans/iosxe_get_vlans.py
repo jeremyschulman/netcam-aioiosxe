@@ -28,7 +28,7 @@ from netcam_aioiosxe import IOSXEDeviceUnderTest
 # Exports
 # -----------------------------------------------------------------------------
 
-__all__ = ["iosxe_get_vlans"]
+__all__ = ["iosxe_get_vlans", "iosxe_get_switchports"]
 
 # -----------------------------------------------------------------------------
 #
@@ -70,3 +70,37 @@ async def iosxe_get_vlans(dut: IOSXEDeviceUnderTest) -> dict[int, dict]:
         got_vlan_table[vlan_id] = vlan_data
 
     return got_vlan_table
+
+
+async def iosxe_get_switchports(dut: IOSXEDeviceUnderTest) -> dict[str, set[int]]:
+    # using the STP operational data to get the mapping between VLANs and the
+    # interfaces using the VLANs.
+
+    data = await dut.api_cache_get(
+        "get-stp", "data/Cisco-IOS-XE-spanning-tree-oper:stp-details/stp-detail"
+    )
+    body = data["Cisco-IOS-XE-spanning-tree-oper:stp-detail"]
+
+    op_interfaces_vlans = defaultdict(set)
+
+    for stp_inst in body:
+        vlan_id = int(stp_inst["instance"][4:])
+        for interfaces in [
+            iface["name"] for iface in stp_inst["interfaces"]["interface"]
+        ]:
+            op_interfaces_vlans[interfaces].add(vlan_id)
+
+    data = await dut.api_cache_get(
+        "get-vlans", "data/Cisco-IOS-XE-vlan-oper:vlans/vlan"
+    )
+
+    # create a table by VLAN-ID (int) mapping to the per VLAN data object.
+    for vlan_data in data["Cisco-IOS-XE-vlan-oper:vlan"]:
+        vlan_id = vlan_data["id"]
+        vlan_if_names = {
+            if_rec["interface"] for if_rec in vlan_data.pop("vlan-interfaces", [])
+        }
+        for if_name in vlan_if_names:
+            op_interfaces_vlans[if_name].add(vlan_id)
+
+    return op_interfaces_vlans
