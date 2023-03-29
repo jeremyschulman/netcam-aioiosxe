@@ -26,14 +26,16 @@ from functools import singledispatchmethod
 
 from netcad.device import Device
 from netcad.checks import CheckCollection, CheckResultsCollection
-from netcam.dut import AsyncDeviceUnderTest
+from netcam.dut import AsyncDeviceUnderTest, SetupError
 
 # -----------------------------------------------------------------------------
 # Privae Imports
 # -----------------------------------------------------------------------------
 
-from .iosxe_plugin_globals import g_iosxe
-from .iosxe_ssh import IOSXESSHDriver
+# TODO: determine if we really need SSH
+# from .iosxe_plugin_globals import g_iosxe
+# from .iosxe_ssh import IOSXESSHDriver
+
 from .iosxe_restconf import IOSXERestConf
 
 # -----------------------------------------------------------------------------
@@ -54,8 +56,10 @@ class IOSXEDeviceUnderTest(AsyncDeviceUnderTest):
     def __init__(self, *, device: Device, **_kwargs):
         super().__init__(device=device)
         self.restconf = IOSXERestConf(device)
-        user, password = g_iosxe.auth_read
-        self.ssh = IOSXESSHDriver(device, username=user, password=password)
+
+        # TODO: determine if we really need SSH
+        # user, password = g_iosxe.auth_read
+        # self.ssh = IOSXESSHDriver(device, username=user, password=password)
         self._api_cache_lock = asyncio.Lock()
         self._api_cache = dict()
 
@@ -69,19 +73,18 @@ class IOSXEDeviceUnderTest(AsyncDeviceUnderTest):
         """DUT setup process"""
         await super().setup()
 
-        if not await self.ssh.is_available():
-            raise RuntimeError(f"{self.device.name}: SSH unavaialble, please check.")
-
-        await self.ssh.cli.open()
+        # TODO: determine if we really need SSH
+        # if not await self.ssh.is_available():
+        #     raise SetupError(f"{self.device.name}: SSH unavaialble, please check.")
+        # await self.ssh.cli.open()
 
         if not await self.restconf.check_connection():
-            raise RuntimeError(
-                f"{self.device.name}: RESTCONF unavaialble, please check."
-            )
+            raise SetupError(f"{self.device.name}: RESTCONF unavaialble, please check.")
 
     async def teardown(self):
         """DUT tearndown process"""
-        await self.ssh.cli.close()
+        # TODO: determine if we really need SSH
+        # await self.ssh.cli.close()
         await self.restconf.aclose()
 
     @singledispatchmethod
