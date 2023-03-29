@@ -16,7 +16,6 @@
 # System Imports
 # -----------------------------------------------------------------------------
 
-import asyncio
 from socket import getservbyname
 
 # -----------------------------------------------------------------------------
@@ -31,6 +30,7 @@ from netcad.device import Device
 # -----------------------------------------------------------------------------
 
 from netcam_aioiosxe.iosxe_plugin_globals import g_iosxe
+from netcam.aioportcheck import port_check_url
 
 # -----------------------------------------------------------------------------
 # Exports
@@ -77,8 +77,4 @@ class IOSXERestConf(httpx.AsyncClient):
         -------
         True when the device eAPI is accessible, False otherwise.
         """
-        try:
-            await asyncio.open_connection(self.base_url.host, port=self.port)
-        except OSError:
-            return False
-        return True
+        return await port_check_url(self.base_url)
