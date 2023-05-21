@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "netcam-aioiosxe"
-version = "0.2.2"
+version = "0.2.3"
 description = "NetCAD - Cisco IOS-XE driver (asyncio)"
 readme = "README.md"
 authors = ["Jeremy Schulman"]
