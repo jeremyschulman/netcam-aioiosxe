@@ -18,12 +18,13 @@
 
 from typing import cast
 from urllib import parse
+from http import HTTPStatus
 
 # -----------------------------------------------------------------------------
 # Public Imports
 # -----------------------------------------------------------------------------
 
-from netcad.checks import CheckResultsCollection
+from netcad.checks import CheckResultsCollection, CheckStatus
 
 from netcad.vlans.checks.check_switchports import (
     SwitchportCheckCollection,
@@ -96,15 +97,35 @@ async def iosxe_check_switchports(
         iface_obj = dut.device.interfaces[if_name]
         if_port_name = "/".join(map(str, iface_obj.port_numbers))
         if_port_type_name = if_name.split(if_port_name)[0]
+
         res = await dut.restconf.get(
             "data/Cisco-IOS-XE-native:native/interface/"
             f"{if_port_type_name}={parse.quote_plus(if_port_name)}/"
             "switchport-config/switchport"
         )
 
+        # there may not be any content here, if the interface is not configured
+        # as expected.  if that is the case, then fail now, and continue to the
+        # next check.
+
+        if res.status_code == HTTPStatus.NO_CONTENT:
+            result.status = CheckStatus.FAIL
+            result.field = "interface-mode"
+            result.logs.FAIL(
+                "missing-data",
+                dict(
+                    msg="Interface missing switchport data, likely misconfigured",
+                    if_name=if_port_type_name + if_port_name,
+                ),
+            )
+            results.append(result)
+            continue
+
         msrd_status = dict()
         body = res.json()
+
         if_swp_data = body["Cisco-IOS-XE-native:switchport"]
+
         if if_swp_trunk := if_swp_data.get("Cisco-IOS-XE-switch:trunk"):
             msrd_status["interface-mode"] = "trunk"
             msrd_status["trunk-vlans"] = set(has_if_switchports[if_name]) - remove_vlan1
@@ -112,6 +133,7 @@ async def iosxe_check_switchports(
                 msrd_status["native-vlan"] = if_swp_trunk["native"]["vlan"]["vlan-id"]
             except KeyError:
                 msrd_status["native-vlan"] = None
+
         else:
             if_swp_access = if_swp_data["Cisco-IOS-XE-switch:access"]
             result.measurement.switchport_mode = "access"
